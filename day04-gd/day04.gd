@@ -25,26 +25,26 @@ func _initialize():
 	print(xmas_matches)
 	print(x_mas_matches)
 
-func g_index(grid: PackedStringArray, line: int, row: int) -> String:
-	if line >= len(grid) or line < 0 or row >= len(grid[0]) or row < 0:
+func g_index(grid: PackedStringArray, line: int, col: int) -> String:
+	if line >= len(grid) or line < 0 or col >= len(grid[0]) or col < 0:
 		return ""
-	return grid[line][row]
+	return grid[line][col]
 
-func check_xmas(grid: PackedStringArray, line: int, row: int) -> int:
+func check_xmas(grid: PackedStringArray, line: int, col: int) -> int:
 	var matches: int = 0
 	for pat in xmas_offsets:
 		var word: String = ""
 		for offset in pat:
-			word += g_index(grid, line + offset[1], row + offset[0])
+			word += g_index(grid, line + offset[1], col + offset[0])
 		if word == "XMAS" or word == "SAMX":
 			matches += 1
 	return matches
 
-func check_x_mas(grid: PackedStringArray, line: int, row: int) -> int:
+func check_x_mas(grid: PackedStringArray, line: int, col: int) -> int:
 	for pat in x_mas_offsets:
 		var word: String = ""
 		for offset in pat:
-			word += g_index(grid, line + offset[1], row + offset[0])
+			word += g_index(grid, line + offset[1], col + offset[0])
 		if word != "MAS" and word != "SAM":
 			return 0
 	return 1
