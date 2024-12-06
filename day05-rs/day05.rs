@@ -71,9 +71,9 @@ fn main() {
                     let lowest_index = min(requirement_index, requiree_index);
                     if requiree_index < requirement_index {
                         let mut new_vec: Vec<i32> = corrected
-                            .iter()
-                            .map(|x| *x)
-                            .filter(|x| (*x != rule.requirement && *x != rule.required_by))
+                            .clone()
+                            .into_iter()
+                            .filter(|&x| (x != rule.requirement && x != rule.required_by))
                             .collect();
                         new_vec.splice(
                             lowest_index..lowest_index,
