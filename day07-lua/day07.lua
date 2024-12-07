@@ -1,22 +1,21 @@
-local function permute(list, t, v)
-    local length = #list
-    local combinations = v ^ (length - 1)
+local function permute(list, target, op_count)
+    local combinations = op_count ^ (#list - 1)
     for i = 0, combinations do
         local acc = list[1]
-        local the_number = i
-        for j = 1, length - 1 do
-            if the_number % v == 0 then
+        local consumable = i
+        for j = 1, #list - 1 do
+            if consumable % op_count == 0 then
                 acc = acc + list[j + 1]
-            elseif the_number % v == 1 then
+            elseif consumable % op_count == 1 then
                 acc = acc * list[j + 1]
             else
                 acc = tonumber(acc .. list[j + 1])
             end
             -- LuaJIT does not yet support the //
             -- operator, this will have to do
-            the_number = math.floor(the_number / v)
+            consumable = math.floor(consumable / op_count)
         end
-        if acc == t then
+        if acc == target then
             return true
         end
     end
@@ -41,8 +40,8 @@ for line in io.open("input"):lines() do
 
     if permute(nums, t, 2) then
         result = result + t
-    end
-    if permute(nums, t, 3) then
+        result2 = result2 + t
+    elseif permute(nums, t, 3) then
         result2 = result2 + t
     end
 end
