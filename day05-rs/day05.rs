@@ -1,116 +1,90 @@
 #!/usr/bin/env -S cargo +nightly -Zscript
-//! ```cargo
-//! [package]
-//! edition = "2021"
-//! ```
-
-// Cargo seems to ignore the edition specified here, but should default to 2021
-// anyways when running this file directly. (./day05.rs)
-
 // Alternatively compile with `rustc day05.rs --edition 2021`
 
 use std::cmp::min;
 
 fn main() {
-    let input = include_str!("input");
-    let mut parsing_rules = true;
-    let mut rules: Vec<Rule> = vec![];
+    let input: Vec<&str> = include_str!("input").split("\n\n").collect();
+    let (input_rules, input_manuals) = (input[0], input[1]);
+    let mut rules: Vec<(i32, i32)> = vec![];
     let mut manuals: Vec<Vec<i32>> = vec![];
     let mut incorrect_manuals: Vec<Vec<i32>> = vec![];
-    let mut result: i32 = 0;
-    let mut correction_result: i32 = 0;
 
-    for line in input.lines() {
-        if parsing_rules {
-            if line == "" {
-                parsing_rules = false;
-            } else {
-                let args: Vec<&str> = line.split("|").collect();
-                let lhs: i32 = args[0].parse().unwrap();
-                let rhs: i32 = args[1].parse().unwrap();
-                rules.push(Rule {
-                    requirement: lhs,
-                    required_by: rhs,
-                    fulfilled: false,
-                });
-            }
-        } else {
-            let args: Vec<i32> = line.split(",").map(|x| x.parse::<i32>().unwrap()).collect();
-            manuals.push(args);
-        }
+    for line in input_rules.lines() {
+        let args: Vec<&str> = line.split("|").collect();
+        let lhs: i32 = args[0].parse().unwrap();
+        let rhs: i32 = args[1].parse().unwrap();
+        rules.push((lhs, rhs));
+    }
+    for line in input_manuals.lines() {
+        let args: Vec<i32> = line.split(",").map(|x| x.parse::<i32>().unwrap()).collect();
+        manuals.push(args);
     }
 
-    for manual in manuals {
-        let rules = rules.clone();
-
-        if validate(manual.clone(), rules) {
-            result += manual[manual.len() / 2];
-        } else {
-            incorrect_manuals.push(manual.clone());
-        }
-    }
+    let result: i32 = manuals
+        .iter()
+        .map(|x| {
+            if validate(x.clone(), rules.clone()) { x[x.len() / 2] }
+            else { incorrect_manuals.push(x.clone()); 0 }
+        })
+        .sum();
 
     println!("{}", result);
 
-    for manual in incorrect_manuals {
-        let rules = rules.clone();
-        let mut corrected: Vec<i32> = manual.clone();
-        while !validate(corrected.clone(), rules.clone()) {
-            for rule in rules.iter() {
-                if corrected.contains(&rule.requirement) && corrected.contains(&rule.required_by) {
-                    let mut requirement_index = 0;
-                    let mut requiree_index = 0;
-                    for i in 0..corrected.len() {
-                        if corrected[i] == rule.requirement {
-                            requirement_index = i;
-                        }
-                        if corrected[i] == rule.required_by {
-                            requiree_index = i;
-                        }
-                    }
-                    let lowest_index = min(requirement_index, requiree_index);
-                    if requiree_index < requirement_index {
-                        let mut new_vec: Vec<i32> = corrected
-                            .clone()
-                            .into_iter()
-                            .filter(|&x| (x != rule.requirement && x != rule.required_by))
-                            .collect();
-                        new_vec.splice(
-                            lowest_index..lowest_index,
-                            [rule.requirement, rule.required_by].into_iter(),
-                        );
-
-                        corrected = new_vec;
-                    }
-                }
-            }
-        }
-
-        correction_result += corrected[corrected.len() / 2]
-    }
+    let correction_result: i32 = incorrect_manuals
+        .iter()
+        .map(|x| correct(x.clone(), rules.clone()))
+        .sum();
 
     println!("{}", correction_result);
 }
 
-fn validate(manual: Vec<i32>, ruleset: Vec<Rule>) -> bool {
-    let mut rules = ruleset.clone();
+fn correct(manual: Vec<i32>, ruleset: Vec<(i32, i32)>) -> i32 {
+    let mut corrected: Vec<i32> = manual.clone();
+    while !validate(corrected.clone(), ruleset.clone()) {
+        for rule in ruleset.iter() {
+            if !corrected.contains(&rule.0) || !corrected.contains(&rule.1) {
+                continue;
+            }
+            let mut requirement_index = 0;
+            let mut requiree_index = 0;
+            for i in 0..corrected.len() {
+                if corrected[i] == rule.0 {
+                    requirement_index = i;
+                }
+                if corrected[i] == rule.1 {
+                    requiree_index = i;
+                }
+            }
+            let lowest_index = min(requirement_index, requiree_index);
+            if requiree_index < requirement_index {
+                let mut new_vec: Vec<i32> = corrected
+                    .clone()
+                    .into_iter()
+                    .filter(|&x| (x != rule.0 && x != rule.1))
+                    .collect();
+                new_vec.splice(lowest_index..lowest_index, [rule.0, rule.1].into_iter());
+                corrected = new_vec;
+            }
+        }
+    }
+
+    corrected[corrected.len() / 2]
+}
+
+fn validate(manual: Vec<i32>, ruleset: Vec<(i32, i32)>) -> bool {
+    let rules = ruleset.clone();
+    let mut fulfilled: Vec<bool> = rules.iter().map(|_| false).collect();
     for page in manual.clone() {
         for i in 0..rules.len() {
-            if !rules[i].fulfilled {
-                if page == rules[i].required_by && manual.contains(&rules[i].requirement) {
+            if !fulfilled[i] {
+                if page == rules[i].1 && manual.contains(&rules[i].0) {
                     return false;
-                } else if page == rules[i].requirement {
-                    rules[i].fulfilled = true;
+                } else if page == rules[i].0 {
+                    fulfilled[i] = true;
                 }
             }
         }
     }
     true
-}
-
-#[derive(Clone, Debug)]
-struct Rule {
-    requirement: i32,
-    required_by: i32,
-    fulfilled: bool,
 }
