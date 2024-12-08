@@ -41,21 +41,18 @@ fn main() {
 
 fn correct(manual: Vec<i32>, ruleset: Vec<(i32, i32)>) -> i32 {
     let mut corrected: Vec<i32> = manual.clone();
-    while !validate(corrected.clone(), ruleset.clone()) {
-        for rule in ruleset.iter() {
-            if !corrected.contains(&rule.0) || !corrected.contains(&rule.1) {
-                continue;
-            }
-            let mut requirement_index = 0;
-            let mut requiree_index = 0;
-            for i in 0..corrected.len() {
-                if corrected[i] == rule.0 {
-                    requirement_index = i;
-                }
-                if corrected[i] == rule.1 {
-                    requiree_index = i;
-                }
-            }
+    let relevant_rules: Vec<(i32, i32)> = ruleset.iter()
+        .filter(|x| corrected.contains(&x.0) && corrected.contains(&x.1))
+        .map(|x| x.clone())
+        .collect();
+    while !validate(corrected.clone(), relevant_rules.clone()) {
+        for rule in relevant_rules.iter() {
+            let requirement_index = corrected.iter()
+                .position(|&x| x == rule.0)
+                .unwrap();
+            let requiree_index = corrected.iter()
+                .position(|&x| x == rule.1)
+                .unwrap();
             let lowest_index = min(requirement_index, requiree_index);
             if requiree_index < requirement_index {
                 let mut new_vec: Vec<i32> = corrected
