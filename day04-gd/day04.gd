@@ -19,8 +19,10 @@ func _initialize():
 
 	for i in len(content):
 		for j in len(content[i]):
-			xmas_matches += check_xmas(content, i, j)
-			x_mas_matches += check_x_mas(content, i, j)
+			if content[i][j] == "A":
+				x_mas_matches += check_x_mas(content, i, j)
+			elif content[i][j] in "XS":
+				xmas_matches += check_xmas(content, i, j)
 
 	print(xmas_matches)
 	print(x_mas_matches)
