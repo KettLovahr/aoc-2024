@@ -19,13 +19,14 @@ public class day06 {
         IsInLoop,
     }
 
-    static List<Position> obstaclePositions = new ArrayList<Position>();
     static Guard guard;
 
     static Position placedObstruction;
 
-    public static int board_width;
-    public static int board_height;
+    public static int board_width = 130;
+    public static int board_height = 130;
+    //static List<Position> obstaclePositions = new ArrayList<Position>();
+    static boolean[][] obstaclePositions = new boolean[board_height][board_width];
 
     public static void main(String[] args) {
         try {
@@ -39,7 +40,7 @@ public class day06 {
                 for (int i = 0; i < line.length(); i++) {
                     switch (line.charAt(i)) {
                         case '#':
-                            obstaclePositions.add(new Position(current_column, current_line));
+                            obstaclePositions[current_line][current_column] = true;
                             break;
                         case '^':
                             guard = new Guard(current_column, current_line);
@@ -47,19 +48,13 @@ public class day06 {
                     }
 
                     current_column += 1;
-                    if (current_column >= board_width) {
-                        board_width = current_column;
-                    }
                 }
                 current_line += 1;
                 current_column = 0;
-                if (current_line >= board_height) {
-                    board_height = current_line;
-                }
             }
 
             // Part 1
-            while (guard.move(obstaclePositions) == GuardStatus.Patrol) { }
+            while (guard.move(obstaclePositions, true) == GuardStatus.Patrol) { }
             System.out.println(guard.getHistoryLength());
 
             //Part 2
@@ -69,17 +64,17 @@ public class day06 {
                 if (pos.compare(guard.initialPosition)) {
                     continue;
                 }
-                List<Position> newObstacles = new ArrayList<Position>(obstaclePositions);
-                newObstacles.add(pos);
+                obstaclePositions[pos.y][pos.x] = true;
                 guard.reset();
                 GuardStatus guardStatus = GuardStatus.Patrol;
                 while (guardStatus == GuardStatus.Patrol) {
-                    guardStatus = guard.move(newObstacles);
+                    guardStatus = guard.move(obstaclePositions, false);
                     if (guardStatus != GuardStatus.Patrol) {break;}
                 }
                 if (guardStatus == GuardStatus.IsInLoop) {
                     loops += 1;
                 }
+                obstaclePositions[pos.y][pos.x] = false;
             }
             System.out.println(loops);
 
@@ -109,11 +104,6 @@ public class day06 {
         public boolean compare(Position other) {
             return this.x == other.x && this.y == other.y;
         }
-
-        @Override
-        public String toString() {
-            return String.format("[x=%d y=%d]", x, y);
-        }
     }
 
     private static class Guard {
@@ -121,6 +111,7 @@ public class day06 {
 
         private Position position;
         private List<Position> positionHistory = new ArrayList<Position>();
+        private List<Position> turns = new ArrayList<Position>();
 
         private Position initialPosition;
 
@@ -133,6 +124,7 @@ public class day06 {
             position = initialPosition;
             direction = Direction.UP;
             positionHistory.clear();
+            turns.clear();
         }
 
         public void addToHistory() {
@@ -141,11 +133,11 @@ public class day06 {
                     return;
                 }
             }
-            positionHistory.add(new Position(position.x, position.y, direction));
+            positionHistory.add(new Position(position.x, position.y));
         }
 
         public boolean isInLoop() {
-            for (Position other : positionHistory) {
+            for (Position other : turns) {
                 if (position.compare(other)) {
                     return direction == other.direction;
                 }
@@ -157,8 +149,9 @@ public class day06 {
             return positionHistory.size();
         }
 
-        public GuardStatus move(List<Position> obstacles) {
-            addToHistory();
+        public GuardStatus move(boolean[][] obstacles, boolean history) {
+            if (history)
+                addToHistory();
             Position new_position;
             int xOff = 0;
             int yOff = 0;
@@ -178,43 +171,43 @@ public class day06 {
                     xOff = -1;
                     break;
             }
-            new_position = new Position(position.x + xOff, position.y + yOff);
+            new_position = new Position(position.x + xOff, position.y + yOff, direction);
 
             boolean turned = false;
-            for (Position obstacle : obstacles) {
-                if (new_position.compare(obstacle)) {
-                    turned = true;
-                    switch (direction) {
-                        case IRRELEVANT:
-                            System.out.println("This should never happen");
-                        case UP:
-                            direction = Direction.RIGHT;
-                            break;
-                        case RIGHT:
-                            direction = Direction.DOWN;
-                            break;
-                        case DOWN:
-                            direction = Direction.LEFT;
-                            break;
-                        case LEFT:
-                            direction = Direction.UP;
-                            break;
-                    }
+
+            boolean out_of_bounds = new_position.x < 0 || new_position.y < 0 || new_position.x >= day06.board_width
+                || new_position.y >= day06.board_height;
+            if (out_of_bounds) {
+                return GuardStatus.Left;
+            }
+            if (obstacles[new_position.y][new_position.x]) {
+                turned = true;
+                switch (direction) {
+                    case IRRELEVANT:
+                        System.out.println("This should never happen");
+                    case UP:
+                        direction = Direction.RIGHT;
+                        break;
+                    case RIGHT:
+                        direction = Direction.DOWN;
+                        break;
+                    case DOWN:
+                        direction = Direction.LEFT;
+                        break;
+                    case LEFT:
+                        direction = Direction.UP;
+                        break;
                 }
             }
             if (!turned) {
                 position = new_position;
+            } else {
+                if (isInLoop()) {
+                    return GuardStatus.IsInLoop;
+                }
+                turns.add(new Position(position.x, position.y, direction));
             }
 
-            boolean ret_val = position.x < 0 || position.y < 0 || position.x >= day06.board_width
-                    || position.y >= day06.board_height;
-
-            if (isInLoop()) {
-                return GuardStatus.IsInLoop;
-            }
-            if (ret_val) {
-                return GuardStatus.Left;
-            }
             return GuardStatus.Patrol;
         }
     }
