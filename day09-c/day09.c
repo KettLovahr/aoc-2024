@@ -37,9 +37,7 @@ unsigned long long part_two(int storage[], int length) {
     int bt_contiguous = 0;
     int try_move = clone[length-1];
 
-    int cont = 0;
     while (try_move >= 0) {
-        cont = 0;
         bt_cursor = length - 1;
         free_cursor = 0;
         free_contiguous = 0;
@@ -62,7 +60,6 @@ unsigned long long part_two(int storage[], int length) {
             for (int i = 0; i < bt_contiguous; i++) {
                 clone[free_cursor + i] = try_move;
                 clone[bt_cursor - i] = -1;
-                cont = 1;
             }
         }
 
@@ -80,7 +77,7 @@ unsigned long long part_two(int storage[], int length) {
 
 int main() {
     FILE* f = fopen("input", "r");
-    char a;
+    char a = 0;
     unsigned long cap = 0;
 
     while (a != EOF) {
