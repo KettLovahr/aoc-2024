@@ -14,3 +14,5 @@ Here are the problems I've solved, the language with which I solved them, and th
 - Day 6: Java `java day06.java`
 - Day 7: Lua `lua day07.lua`
 - Day 8: Python `python3 day08.py`
+- Day 9: C `gcc day09.c -O1 -std=c99 -Wall && ./a.out`
+- Day 10: FreeBASIC `fbc day10.bas && ./day10`
