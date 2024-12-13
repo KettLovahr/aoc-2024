@@ -18,10 +18,10 @@ int count_plot(int w, int h, unsigned char grid[h][w], char c) {
     return perimeter * area;
 }
 
-int get_sides(int w, int h, unsigned char grid[h][w]) {
+int get_sides(int sx, int sy, int ex, int ey, int w, int h, unsigned char grid[h][w]) {
     int sides = 0;
-    for (int y = -1; y < h; y++) {
-        for (int x = -1; x < w; x++) {
+    for (int y = sy - 1; y <= ey; y++) {
+        for (int x = sx - 1; x <= ex; x++) {
             int count = 0;
             if (in_bounds(x, y, w, h)         && grid[y][x]         == 1) {count++;}
             if (in_bounds(x, y + 1, w, h)     && grid[y + 1][x]     == 1) {count++;}
@@ -45,20 +45,24 @@ int get_sides(int w, int h, unsigned char grid[h][w]) {
 }
 
 int count_plot_sides(int w, int h, unsigned char grid[h][w], char c) {
-    int sides = 0;
     int area = 0;
-    int first_x = -1, first_y = -1;
+    int sx = -1, sy = -1;
+    int ex = -1, ey = -1;
     for (int y = 0; y < h; y++) {
         for (int x = 0; x < w; x++) {
             if (grid[y][x] != c) {continue;}
             area++;
-            if (first_x == -1 || first_y == -1) {
-                first_x = x;
-                first_y = y;
+            if (sx == -1) {
+                sx = x; sy = y;
+                ex = x; ey = y;
             }
+            if (x < sx) {sx = x;}
+            if (x > ex) {ex = x;}
+            if (y < sy) {sy = y;}
+            if (y > ey) {ey = y;}
         }
     }
-    sides = get_sides(w, h, grid);
+    int sides = get_sides(sx, sy, ex, ey, w, h, grid);
     return sides * area;
 }
 
